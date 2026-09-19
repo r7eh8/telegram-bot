@@ -9,7 +9,7 @@ BOT_TOKEN = "8627446273:AAGTP93hdDv4ZKeUG2V03JKOpjK0G1wIQgE"
 
 CHANNEL_ID = -1001697421048           
 CHANNEL_USERNAME = "sbtbh"            
-GROUP_ID = -1002597094976             # الأيدي الحالي للمجموعة
+GROUP_ID = -1002597094976             
 GROUP_INVITE_LINK = "https://t.me/+XWhmV6KdAOA3NGRi" 
 
 app = Client("video_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
@@ -27,7 +27,7 @@ async def check_channel_membership(client, user_id):
         return False
     return False
 
-# دالة فحص المجموعة (مع حماية تامة ضد أخطاء الـ ID)
+# دالة فحص المجموعة
 async def check_group_membership(client, user_id):
     try:
         member = await client.get_chat_member(GROUP_ID, user_id)
@@ -36,11 +36,11 @@ async def check_group_membership(client, user_id):
     except UserNotParticipant:
         return False
     except Exception as e:
-        print(f"خطأ مجموعة (تأكد من وجود البوت فيها): {e}")
+        print(f"خطأ مجموعة: {e}")
         return False
     return False
 
-# أمر البدء /start (مرتب وبدون تكرار نهائياً - فلتر حصرا للأمر الخاص)
+# أمر البدء /start
 @app.on_message(filters.command("start") & filters.private)
 async def start_command(client, message):
     user_id = message.from_user.id
@@ -72,7 +72,6 @@ async def start_command(client, message):
         )
         return
 
-    # 3. إذا مشترك بالاتنين
     await show_videos_menu(message)
 
 # قائمة الفيديوهات
@@ -152,5 +151,5 @@ async def send_selected_video(client, callback_query):
     await callback_query.message.reply_video(video=file_id, caption=f"تفضل، هذا هو المقطع رقم {video_num} 🎬")
     await callback_query.answer()
 
-print("البوت يعمل الآن بشكل منظم وبدون أي تكرار...")
+print("البوت يعمل الآن بصورة صحيحة ومع قناتك الخاصة...")
 app.run()
