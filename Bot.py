@@ -10,7 +10,7 @@ CHANNEL_USERNAME = "sbtbh"
 
 app = Client("video_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# دالة فحص اشتراك آمنة للبداء فقط
+# دالة فحص اشتراك آمنة
 async def check_channel_membership(client, user_id):
     try:
         member = await client.get_chat_member(CHANNEL_ID, user_id)
@@ -18,7 +18,7 @@ async def check_channel_membership(client, user_id):
             return True
     except Exception as e:
         print(f"تنبيه فحص الاشتراك: {e}")
-        return True  # للسماح بالمرور وعدم تعطيل البوت
+        return True  
     return False
 
 @app.on_message(filters.command("start") & filters.private)
@@ -57,12 +57,11 @@ async def verify_channel(client, callback_query):
         pass
     await show_videos_menu(callback_query.message)
 
-# استقبال الضغط على أزرار القائمة السفلى وإرسال الفيديوهات مباشرة بدون تعقيد
+# استقبال الضغط على أزرار القائمة السفلى وإرسال الفيديوهات بالمعرّفات الجديدة
 @app.on_message(filters.text & filters.private)
 async def send_selected_video(client, message):
     text = message.text
     
-    # تجاهل رسالة الـ start أو أي كلام غريب
     if text == "/start":
         return
 
@@ -70,8 +69,8 @@ async def send_selected_video(client, message):
         "🎥 المقطع الأول": "AAMCAgADGQEDk6aoaq6369d6nq0JG2N-eqFFcMGjDMEAAgymAAJoBHFJhJrud-OGaigBAAdtAAM9BA",
         "🎥 المقطع الثاني": "AAMCAgADGQEDk6apaq6362yaB3ZD3XzbBDFDRofaOYkAAsCpAAJggnhJ6P49nAMFTWEBAAdtAAM9BA",
         "🎥 المقطع الثالث": "AAMCAgADGQEDk6araq6365Y1_LyTmuhJ9suB06Zv5ogAAsKpAAJggnhJ62j7onf695oBAAdtAAM9BA",
-        "🎥 المقطع الرابع": "AAMCAgADGQEDk6asaq636xTh_JmpIKLjurF84MQoNy8AAi2lAAJoBHFJB8TXrbRglYwBAAdtAAM9BA",
-        "🎥 المقطع الخامس": "AAMCAgADGQEDk6aqaq6362TI5AgcCHCODvTQlFcEiDIAAsGpAAJggnhJCxgAAaPG0RHFAQAHbQADPQQ"
+        "🎥 المقطع الرابع": "AAMCAgADGQEDk8v0aq74U2faGSXblqjxF5MGGE6GgqgAAiOtAAJggnhJcAUOWTcRBSUBAAdtAAM9BA",
+        "🎥 المقطع الخامس": "AAMCAgADGQEDk8v2aq74U7gbPTzBwq2Vy_3ovR1js8wAAiStAAJggnhJFG31vYEQT-EBAAdtAAM9BA"
     }
     
     if text in videos_data:
@@ -82,5 +81,5 @@ async def send_selected_video(client, message):
             await message.reply(f"عذراً، حدث خطأ أثناء إرسال المقطع.")
             print(f"خطأ إرسال الفيديو: {e}")
 
-print("البوت يعمل بثبات وبدون مشاكل...")
+print("البوت يعمل بكامل الفيديوهات والمميزات النهائية...")
 app.run()
