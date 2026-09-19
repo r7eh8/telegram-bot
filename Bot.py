@@ -1,23 +1,25 @@
 from pyrogram import Client, filters
-from pyrogram.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 
 API_ID = 31050502              
 API_HASH = "30899f260555ef9e1ae8725cce3d540c"      
 BOT_TOKEN = "8627446273:AAH4hsKW2SMyBlxzPmSdQIrdJauP1tPoO7U"    
 
-CHANNEL_USERNAME = "sbtbh"            
+CHANNEL_ID = -1001697421048        # الآيدي الرقمي للقناة
+CHANNEL_USERNAME = "sbtbh"         # معرف القناة
 
 app = Client("video_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# دالة فحص آمنة ومحمية
+# دالة فحص اشتراك دقيقة وآمنة
 async def check_channel_membership(client, user_id):
     try:
-        member = await client.get_chat_member(CHANNEL_USERNAME, user_id)
+        member = await client.get_chat_member(CHANNEL_ID, user_id)
         if member.status in ["creator", "administrator", "member"]:
             return True
     except Exception as e:
-        print(f"تنبيه فحص القناة: {e}")
-        return True  # للسماح بالمرور وضمان عدم التوقف
+        print(f"خطأ في فحص الاشتراك: {e}")
+        # إذا حدث خطأ في الفحص، نعتبره غير مشترك أو نسمح حسب الحاجة، لكن الأصح إرجاع False لضمان دقة القناة
+        return False
     return False
 
 @app.on_message(filters.command("start") & filters.private)
@@ -26,8 +28,6 @@ async def start_command(client, message):
     in_channel = await check_channel_membership(client, user_id)
     
     if not in_channel:
-        # إذا لم يكن مشتركاً نترك الأزرار شفافة للاشتراك والتحقق
-        from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("اشترك في القناة 📢", url=f"https://t.me/{CHANNEL_USERNAME}")],
             [InlineKeyboardButton("تحقق من اشتراك القناة ✅", callback_data="check_channel")]
@@ -41,29 +41,44 @@ async def start_command(client, message):
     await show_videos_menu(message)
 
 async def show_videos_menu(message):
-    # قائمة الأزرار التي ستظهر أسفل الدردشة
     keyboard = ReplyKeyboardMarkup([
         [KeyboardButton("🎥 المقطع الأول"), KeyboardButton("🎥 المقطع الثاني")],
         [KeyboardButton("🎥 المقطع الثالث"), KeyboardButton("🎥 المقطع الرابع")],
         [KeyboardButton("🎥 المقطع الخامس")]
     ], resize_keyboard=True)
     
-    await message.reply_text("أهلاً بك! تم التحقق من اشتراكك بنجاح ✅.\nاختر المقطع الذي تريد مشاهدته من القائمة أدناه 👇", reply_markup=keyboard)
+    if hasattr(message, "reply_text"):
+        await message.reply_text("أهلاً بك! تم التحقق من اشتراكك بنجاح ✅.\nاختر المقطع الذي تريد مشاهدته من القائمة أدناه 👇", reply_markup=keyboard)
+    else:
+        await message.reply("أهلاً بك! تم التحقق من اشتراكك بنجاح ✅.\nاختر المقطع الذي تريد مشاهدته من القائمة أدناه 👇", reply_markup=keyboard)
 
 @app.on_callback_query(filters.regex("check_channel"))
 async def verify_channel(client, callback_query):
-    await callback_query.answer("تم التحقق بنجاح! 🎉", show_alert=False)
-    try:
-        await callback_query.message.delete()
-    except:
-        pass
-    await show_videos_menu(callback_query.message)
+    user_id = callback_query.from_user.id
+    in_channel = await check_channel_membership(client, user_id)
+    
+    if in_channel:
+        await callback_query.answer("تم التحقق من اشتراكك بنجاح! 🎉", show_alert=False)
+        try:
+            await callback_query.message.delete()
+        except:
+            pass
+        await show_videos_menu(callback_query.message)
+    else:
+        await callback_query.answer("عذراً، لم يتم رصد اشتراكك بالقناة بعد! يرجى الاشتراك أولاً.", show_alert=True)
 
-# استقبال الضغط على أزرار القائمة السفلى وإرسال الفيديو المناسب
+# استقبال الضغط على أزرار القائمة السفلى وإرسال الفيديوهات
 @app.on_message(filters.text & filters.private)
 async def send_selected_video(client, message):
     text = message.text
+    user_id = message.from_user.id
     
+    # فحص الاشتراك أيضاً قبل إرسال الفيديو لضمان عدم تخطي القناة
+    in_channel = await check_channel_membership(client, user_id)
+    if not in_channel:
+        await message.reply("عذراً، يجب عليك الاشتراك في القناة أولاً لتتمكن من استلام المقاطع! اضغط /start من جديد.")
+        return
+
     videos_data = {
         "🎥 المقطع الأول": "AAMCAgADGQEDk6aoaq6369d6nq0JG2N-eqFFcMGjDMEAAgymAAJoBHFJhJrud-OGaigBAAdtAAM9BA",
         "🎥 المقطع الثاني": "AAMCAgADGQEDk6apaq6362yaB3ZD3XzbBDFDRofaOYkAAsCpAAJggnhJ6P49nAMFTWEBAAdtAAM9BA",
@@ -74,9 +89,11 @@ async def send_selected_video(client, message):
     
     if text in videos_data:
         file_id = videos_data[text]
-        video_num = text.split(" ")[-1] # استخراج رقم المقطع للعنونة
-        await message.reply_video(video=file_id, caption=f"تفضل، هذا هو {text} 🎬")
+        try:
+            await message.reply_video(video=file_id, caption=f"تفضل، هذا هو {text} 🎬")
+        except Exception as e:
+            await message.reply(f"عذراً، حدث خطأ أثناء إرسال المقطع. تأكد من صحة معرف الفيديو (file_id).")
+            print(f"خطأ إرسال الفيديو: {e}")
 
-print("البوت يعمل مع القائمة السفلى بنجاح...")
+print("البوت يعمل بكامل الكفاءة وحل المشاكل...")
 app.run()
-        
