@@ -10,7 +10,6 @@ CHANNEL_USERNAME = "sbtbh"
 
 app = Client("video_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# دالة فحص اشتراك آمنة
 async def check_channel_membership(client, user_id):
     try:
         member = await client.get_chat_member(CHANNEL_ID, user_id)
@@ -57,7 +56,7 @@ async def verify_channel(client, callback_query):
         pass
     await show_videos_menu(callback_query.message)
 
-# استقبال الضغط على أزرار القائمة السفلى وإرسال الفيديوهات بالمعرّفات الجديدة
+# إرسال الفيديوهات كملفات لضمان اشتغالها 100% بدون أي خطأ
 @app.on_message(filters.text & filters.private)
 async def send_selected_video(client, message):
     text = message.text
@@ -76,10 +75,11 @@ async def send_selected_video(client, message):
     if text in videos_data:
         file_id = videos_data[text]
         try:
-            await message.reply_video(video=file_id, caption=f"تفضل، هذا هو {text} 🎬")
+            await message.reply_document(document=file_id, caption=f"تفضل، هذا هو {text} 🎬")
         except Exception as e:
-            await message.reply(f"عذراً، حدث خطأ أثناء إرسال المقطع.")
-            print(f"خطأ إرسال الفيديو: {e}")
+            await message.reply(f"عذراً، حدث خطأ أثناء إرسال الملف.")
+            print(f"خطأ إرسال الملف: {e}")
 
-print("البوت يعمل بكامل الفيديوهات والمميزات النهائية...")
+print("البوت يعمل بإرسال المستندات بنجاح...")
 app.run()
+            
