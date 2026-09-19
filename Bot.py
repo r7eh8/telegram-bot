@@ -7,28 +7,28 @@ API_ID = 31050502
 API_HASH = "30899f260555ef9e1ae8725cce3d540c"      
 BOT_TOKEN = "8627446273:AAGTP93hdDv4ZKeUG2V03JKOpjK0G1wIQgE"    
 
-CHANNEL_USERNAME = "@sbtbh"           
+# استخدام الـ IDs الرقمية حصراً لضمان دقة الفحص 100%
+CHANNEL_ID = -1001697421048           
+CHANNEL_USERNAME = "sbtbh"            # بدون علامة الـ @ لعرض زر الاشتراك
 GROUP_ID = -1002597094976             
 GROUP_INVITE_LINK = "https://t.me/+XWhmV6KdAOA3NGRi" 
 
 app = Client("video_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# دالة التحقق من القناة (مُحدثة لتكون أكثر مرونة)
+# دالة التحقق من القناة بالمعرف الرقمي
 async def check_channel_membership(client, user_id):
     try:
-        member = await client.get_chat_member(CHANNEL_USERNAME, user_id)
-        # التحقق من أن الحالة تدل على الاشتراك
+        member = await client.get_chat_member(CHANNEL_ID, user_id)
         if member.status in ["creator", "administrator", "member"]:
             return True
     except UserNotParticipant:
         return False
     except Exception as e:
         print(f"خطأ في التحقق من القناة: {e}")
-        # في حال حدث خطأ تقني، نعتبره غير مشترك لتجنب تخطي الشرط
         return False
     return False
 
-# دالة التحقق من المجموعة
+# دالة التحقق من المجموعة بالمعرف الرقمي
 async def check_group_membership(client, user_id):
     try:
         member = await client.get_chat_member(GROUP_ID, user_id)
@@ -52,11 +52,11 @@ async def start_command(client, message):
     # إذا غير مشترك بالقناة
     if not in_channel:
         keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("اشترك في القناة 📢", url=f"https://t.me/{CHANNEL_USERNAME.replace('@', '')}")],
+            [InlineKeyboardButton("اشترك في القناة 📢", url=f"https://t.me/{CHANNEL_USERNAME}")],
             [InlineKeyboardButton("تحقق من اشتراك القناة ✅", callback_data="check_channel")]
         ])
         await message.reply(
-            f"عذراً، يجب عليك الاشتراك في القناة ({CHANNEL_USERNAME}) أولاً لتتمكن من استخدام البوت.\n\nبعد الاشتراگ اضغط على زر التحقق أدناه 👇",
+            f"عذراً، يجب عليك الاشتراك في القناة (@{CHANNEL_USERNAME}) أولاً لتتمكن من استخدام البوت.\n\nبعد الاشتراگ اضغط على زر التحقق أدناه 👇",
             reply_markup=keyboard
         )
         return
@@ -153,6 +153,5 @@ async def send_selected_video(client, callback_query):
     await callback_query.message.reply_video(video=file_id, caption=f"تفضل، هذا هو المقطع رقم {video_num} 🎬")
     await callback_query.answer()
 
-print("البوت يعمل الآن...")
+print("البوت يعمل الآن بمعرفات رقمية دقيقة...")
 app.run()
-        
