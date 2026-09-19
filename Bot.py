@@ -56,7 +56,7 @@ async def verify_channel(client, callback_query):
         pass
     await show_videos_menu(callback_query.message)
 
-# إرسال الفيديوهات كملفات لضمان اشتغالها 100% بدون أي خطأ
+# إرسال المقاطع مباشرة عن طريق جلبها من القناة عبر أرقام الرسائل الصحيحة
 @app.on_message(filters.text & filters.private)
 async def send_selected_video(client, message):
     text = message.text
@@ -64,22 +64,29 @@ async def send_selected_video(client, message):
     if text == "/start":
         return
 
-    videos_data = {
-        "🎥 المقطع الأول": "AAMCAgADGQEDk6aoaq6369d6nq0JG2N-eqFFcMGjDMEAAgymAAJoBHFJhJrud-OGaigBAAdtAAM9BA",
-        "🎥 المقطع الثاني": "AAMCAgADGQEDk6apaq6362yaB3ZD3XzbBDFDRofaOYkAAsCpAAJggnhJ6P49nAMFTWEBAAdtAAM9BA",
-        "🎥 المقطع الثالث": "AAMCAgADGQEDk6araq6365Y1_LyTmuhJ9suB06Zv5ogAAsKpAAJggnhJ62j7onf695oBAAdtAAM9BA",
-        "🎥 المقطع الرابع": "AAMCAgADGQEDk8v0aq74U2faGSXblqjxF5MGGE6GgqgAAiOtAAJggnhJcAUOWTcRBSUBAAdtAAM9BA",
-        "🎥 المقطع الخامس": "AAMCAgADGQEDk8v2aq74U7gbPTzBwq2Vy_3ovR1js8wAAiStAAJggnhJFG31vYEQT-EBAAdtAAM9BA"
+    # ربط أزرار القائمة بأرقام الرسائل الحقيقية في قناتك
+    videos_messages = {
+        "🎥 المقطع الأول": 59,
+        "🎥 المقطع الثاني": 60,
+        "🎥 المقطع الثالث": 61,
+        "🎥 المقطع الرابع": 62,
+        "🎥 المقطع الخامس": 63
     }
     
-    if text in videos_data:
-        file_id = videos_data[text]
+    if text in videos_messages:
+        msg_id = videos_messages[text]
         try:
-            await message.reply_document(document=file_id, caption=f"تفضل، هذا هو {text} 🎬")
+            # نسخ أو إعادة توجيه الرسالة من القناة للمستخدم مباشرة
+            await client.copy_message(
+                chat_id=message.chat.id,
+                from_chat_id=CHANNEL_ID,
+                message_id=msg_id,
+                caption=f"تفضل، هذا هو {text} 🎬"
+            )
         except Exception as e:
-            await message.reply(f"عذراً، حدث خطأ أثناء إرسال الملف.")
-            print(f"خطأ إرسال الملف: {e}")
+            await message.reply(f"عذراً، حدث خطأ أثناء إرسال المقطع. تأكد أن البوت مشرف بالقناة.")
+            print(f"خطأ نسخ الرسالة: {e}")
 
-print("البوت يعمل بإرسال المستندات بنجاح...")
+print("البوت يعمل بنظام جلب المنشورات من القناة بنجاح...")
 app.run()
-            
+    
