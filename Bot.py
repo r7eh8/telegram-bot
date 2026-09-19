@@ -5,8 +5,12 @@ API_ID = 31050502
 API_HASH = "30899f260555ef9e1ae8725cce3d540c"      
 BOT_TOKEN = "8627446273:AAH4hsKW2SMyBlxzPmSdQIrdJauP1tPoO7U"    
 
+# قناة التحقق من الاشتراك الإجباري العامة
 CHANNEL_ID = -1001697421048        
 CHANNEL_USERNAME = "sbtbh"         
+
+# أيدي قناة الأرشيف الخاصة
+ARCHIVE_CHANNEL_ID = -1003818172414   
 
 app = Client("video_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
@@ -56,7 +60,7 @@ async def verify_channel(client, callback_query):
         pass
     await show_videos_menu(callback_query.message)
 
-# إرسال المقاطع عبر التخزين الداخلي (file_id) لكي تعمل ولو تم حذفها من القناة
+# سحب الفيديوهات بناءً على أيدي الرسائل الحقيقي من قناة الأرشيف
 @app.on_message(filters.text & filters.private)
 async def send_selected_video(client, message):
     text = message.text
@@ -64,22 +68,27 @@ async def send_selected_video(client, message):
     if text == "/start":
         return
 
-    videos_data = {
-        "🎥 المقطع الأول": "AAMCAgADGQEDk6aoaq6369d6nq0JG2N-eqFFcMGjDMEAAgymAAJoBHFJhJrud-OGaigBAAdtAAM9BA",
-        "🎥 المقطع الثاني": "AAMCAgADGQEDk6apaq6362yaB3ZD3XzbBDFDRofaOYkAAsCpAAJggnhJ6P49nAMFTWEBAAdtAAM9BA",
-        "🎥 المقطع الثالث": "AAMCAgADGQEDk6araq6365Y1_LyTmuhJ9suB06Zv5ogAAsKpAAJggnhJ62j7onf695oBAAdtAAM9BA",
-        "🎥 المقطع الرابع": "AAMCAgADGQEDk8v0aq74U2faGSXblqjxF5MGGE6GgqgAAiOtAAJggnhJcAUOWTcRBSUBAAdtAAM9BA",
-        "🎥 المقطع الخامس": "AAMCAgADGQEDk8v2aq74U7gbPTzBwq2Vy_3ovR1js8wAAiStAAJggnhJFG31vYEQT-EBAAdtAAM9BA"
+    # ربط أزرار القائمة بأيدي الرسائل الصحيحة التي استخرجناها من الروابط
+    videos_messages = {
+        "🎥 المقطع الأول": 3,   
+        "🎥 المقطع الثاني": 2,   
+        "🎥 المقطع الثالث": 4,   
+        "🎥 المقطع الرابع": 5,   
+        "🎥 المقطع الخامس": 6    
     }
     
-    if text in videos_data:
-        file_id = videos_data[text]
+    if text in videos_messages:
+        msg_id = videos_messages[text]
         try:
-            await message.reply_video(video=file_id, caption=f"تفضل، هذا هو {text} 🎬")
+            await client.copy_message(
+                chat_id=message.chat.id,
+                from_chat_id=ARCHIVE_CHANNEL_ID,
+                message_id=msg_id,
+                caption=f"تفضل، هذا هو {text} 🎬"
+            )
         except Exception as e:
-            await message.reply(f"عذراً، حدث خطأ أثناء إرسال المقطع.")
-            print(f"خطأ إرسال الفيديو: {e}")
+            await message.reply(f"عذراً، حدث خطأ أثناء إرسال المقطع. تأكد أن البوت مشرف في قناة الأرشيف.")
+            print(f"خطأ نسخ الرسالة: {e}")
 
-print("البوت يعمل بثبات تام وبدون الحاجة لبقاء الملفات في القناة...")
+print("البوت يعمل بنجاح ومربوط بأرشيف الفيديوهات...")
 app.run()
-    
