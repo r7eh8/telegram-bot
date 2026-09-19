@@ -1,5 +1,5 @@
 from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 
 API_ID = 31050502              
 API_HASH = "30899f260555ef9e1ae8725cce3d540c"      
@@ -9,24 +9,25 @@ CHANNEL_USERNAME = "sbtbh"
 
 app = Client("video_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# دالة فحص آمنة ومحمية لا تسبب Crash أبداً
+# دالة فحص آمنة ومحمية
 async def check_channel_membership(client, user_id):
     try:
         member = await client.get_chat_member(CHANNEL_USERNAME, user_id)
         if member.status in ["creator", "administrator", "member"]:
             return True
     except Exception as e:
-        print(f"تنبيه فحص القناة (غير مؤثر): {e}")
-        return True  # مؤقتاً لتجنب أي توقف ولضمان عمل البوت بسلاسة
+        print(f"تنبيه فحص القناة: {e}")
+        return True  # للسماح بالمرور وضمان عدم التوقف
     return False
 
 @app.on_message(filters.command("start") & filters.private)
 async def start_command(client, message):
     user_id = message.from_user.id
-    
     in_channel = await check_channel_membership(client, user_id)
     
     if not in_channel:
+        # إذا لم يكن مشتركاً نترك الأزرار شفافة للاشتراك والتحقق
+        from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("اشترك في القناة 📢", url=f"https://t.me/{CHANNEL_USERNAME}")],
             [InlineKeyboardButton("تحقق من اشتراك القناة ✅", callback_data="check_channel")]
@@ -40,18 +41,14 @@ async def start_command(client, message):
     await show_videos_menu(message)
 
 async def show_videos_menu(message):
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🎥 المقطع الأول", callback_data="vid_1")],
-        [InlineKeyboardButton("🎥 المقطع الثاني", callback_data="vid_2")],
-        [InlineKeyboardButton("🎥 المقطع الثالث", callback_data="vid_3")],
-        [InlineKeyboardButton("🎥 المقطع الرابع", callback_data="vid_4")],
-        [InlineKeyboardButton("🎥 المقطع الخامس", callback_data="vid_5")]
-    ])
+    # قائمة الأزرار التي ستظهر أسفل الدردشة
+    keyboard = ReplyKeyboardMarkup([
+        [KeyboardButton("🎥 المقطع الأول"), KeyboardButton("🎥 المقطع الثاني")],
+        [KeyboardButton("🎥 المقطع الثالث"), KeyboardButton("🎥 المقطع الرابع")],
+        [KeyboardButton("🎥 المقطع الخامس")]
+    ], resize_keyboard=True)
     
-    if hasattr(message, "reply_text"):
-        await message.reply_text("أهلاً بك! تم التحقق من اشتراكك بنجاح ✅.\nاختر المقطع الذي تريد مشاهدته:", reply_markup=keyboard)
-    else:
-        await message.edit_text("أهلاً بك! تم التحقق من اشتراكك بنجاح ✅.\nاختر المقطع الذي تريد مشاهدته:", reply_markup=keyboard)
+    await message.reply_text("أهلاً بك! تم التحقق من اشتراكك بنجاح ✅.\nاختر المقطع الذي تريد مشاهدته من القائمة أدناه 👇", reply_markup=keyboard)
 
 @app.on_callback_query(filters.regex("check_channel"))
 async def verify_channel(client, callback_query):
@@ -62,21 +59,24 @@ async def verify_channel(client, callback_query):
         pass
     await show_videos_menu(callback_query.message)
 
-@app.on_callback_query(filters.regex(r"^vid_\d$"))
-async def send_selected_video(client, callback_query):
-    video_num = callback_query.data.split("_")[1]
+# استقبال الضغط على أزرار القائمة السفلى وإرسال الفيديو المناسب
+@app.on_message(filters.text & filters.private)
+async def send_selected_video(client, message):
+    text = message.text
     
-    videos_file_ids = {
-        "1": "AAMCAgADGQEDk6aoaq6369d6nq0JG2N-eqFFcMGjDMEAAgymAAJoBHFJhJrud-OGaigBAAdtAAM9BA",
-        "2": "AAMCAgADGQEDk6apaq6362yaB3ZD3XzbBDFDRofaOYkAAsCpAAJggnhJ6P49nAMFTWEBAAdtAAM9BA",
-        "3": "AAMCAgADGQEDk6araq6365Y1_LyTmuhJ9suB06Zv5ogAAsKpAAJggnhJ62j7onf695oBAAdtAAM9BA",
-        "4": "AAMCAgADGQEDk6asaq636xTh_JmpIKLjurF84MQoNy8AAi2lAAJoBHFJB8TXrbRglYwBAAdtAAM9BA",
-        "5": "AAMCAgADGQEDk6aqaq6362TI5AgcCHCODvTQlFcEiDIAAsGpAAJggnhJCxgAAaPG0RHFAQAHbQADPQQ"
+    videos_data = {
+        "🎥 المقطع الأول": "AAMCAgADGQEDk6aoaq6369d6nq0JG2N-eqFFcMGjDMEAAgymAAJoBHFJhJrud-OGaigBAAdtAAM9BA",
+        "🎥 المقطع الثاني": "AAMCAgADGQEDk6apaq6362yaB3ZD3XzbBDFDRofaOYkAAsCpAAJggnhJ6P49nAMFTWEBAAdtAAM9BA",
+        "🎥 المقطع الثالث": "AAMCAgADGQEDk6araq6365Y1_LyTmuhJ9suB06Zv5ogAAsKpAAJggnhJ62j7onf695oBAAdtAAM9BA",
+        "🎥 المقطع الرابع": "AAMCAgADGQEDk6asaq636xTh_JmpIKLjurF84MQoNy8AAi2lAAJoBHFJB8TXrbRglYwBAAdtAAM9BA",
+        "🎥 المقطع الخامس": "AAMCAgADGQEDk6aqaq6362TI5AgcCHCODvTQlFcEiDIAAsGpAAJggnhJCxgAAaPG0RHFAQAHbQADPQQ"
     }
     
-    file_id = videos_file_ids.get(video_num)
-    await callback_query.message.reply_video(video=file_id, caption=f"تفضل، هذا هو المقطع رقم {video_num} 🎬")
-    await callback_query.answer()
+    if text in videos_data:
+        file_id = videos_data[text]
+        video_num = text.split(" ")[-1] # استخراج رقم المقطع للعنونة
+        await message.reply_video(video=file_id, caption=f"تفضل، هذا هو {text} 🎬")
 
-print("البوت يعمل بنظام حماية كامل وبدون تراجع...")
+print("البوت يعمل مع القائمة السفلى بنجاح...")
 app.run()
+        
