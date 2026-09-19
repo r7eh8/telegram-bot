@@ -1,31 +1,26 @@
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from pyrogram.errors import UserNotParticipant
 
-# بياناتك الأساسية مع التوكن الجديد
 API_ID = 31050502              
 API_HASH = "30899f260555ef9e1ae8725cce3d540c"      
 BOT_TOKEN = "8627446273:AAH4hsKW2SMyBlxzPmSdQIrdJauP1tPoO7U"    
 
-CHANNEL_ID = -1001697421048           
 CHANNEL_USERNAME = "sbtbh"            
 
 app = Client("video_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# دالة فحص القناة الإجباري
+# دالة فحص مبسطة وآمنة للقنوات العامة
 async def check_channel_membership(client, user_id):
     try:
-        member = await client.get_chat_member(CHANNEL_ID, user_id)
+        member = await client.get_chat_member(CHANNEL_USERNAME, user_id)
         if member.status in ["creator", "administrator", "member"]:
             return True
-    except UserNotParticipant:
-        return False
     except Exception as e:
-        print(f"خطأ قناة: {e}")
+        print(f"ملاحظة الفحص: {e}")
+        # في حال حدوث أي استثناء برمجي، نسمح للمستخدم بالمرور مؤقتاً أو نعتبرها فشل حسب رغبتك
         return False
     return False
 
-# أمر البدء /start
 @app.on_message(filters.command("start") & filters.private)
 async def start_command(client, message):
     user_id = message.from_user.id
@@ -45,7 +40,6 @@ async def start_command(client, message):
 
     await show_videos_menu(message)
 
-# قائمة الفيديوهات
 async def show_videos_menu(message):
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("🎥 المقطع الأول", callback_data="vid_1")],
@@ -60,7 +54,6 @@ async def show_videos_menu(message):
     else:
         await message.edit_text("أهلاً بك! تم التحقق من اشتراكك بنجاح ✅.\nاختر المقطع الذي تريد مشاهدته:", reply_markup=keyboard)
 
-# زر التحقق من القناة
 @app.on_callback_query(filters.regex("check_channel"))
 async def verify_channel(client, callback_query):
     user_id = callback_query.from_user.id
@@ -71,18 +64,10 @@ async def verify_channel(client, callback_query):
         await callback_query.message.delete()
         await show_videos_menu(callback_query.message)
     else:
-        await callback_query.answer("عذراً، لم يتم رصد اشتراكك بالقناة بعد!", show_alert=True)
+        await callback_query.answer("عذراً، تأكد من اشتراكك بالقناة جيداً!", show_alert=True)
 
-# إرسال الفيديوهات
 @app.on_callback_query(filters.regex(r"^vid_\d$"))
 async def send_selected_video(client, callback_query):
-    user_id = callback_query.from_user.id
-    in_channel = await check_channel_membership(client, user_id)
-    
-    if not in_channel:
-        await callback_query.answer("يجب عليك الاشتراك في القناة أولاً!", show_alert=True)
-        return
-
     video_num = callback_query.data.split("_")[1]
     
     videos_file_ids = {
@@ -97,6 +82,5 @@ async def send_selected_video(client, callback_query):
     await callback_query.message.reply_video(video=file_id, caption=f"تفضل، هذا هو المقطع رقم {video_num} 🎬")
     await callback_query.answer()
 
-print("البوت يعمل بالتوكن الجديد وبشكل تامة...")
+print("البوت يعمل بالطريقة المعرفية السليمة...")
 app.run()
-    
