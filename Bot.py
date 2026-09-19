@@ -9,12 +9,10 @@ BOT_TOKEN = "8627446273:AAGTP93hdDv4ZKeUG2V03JKOpjK0G1wIQgE"
 
 CHANNEL_ID = -1001697421048           
 CHANNEL_USERNAME = "sbtbh"            
-GROUP_ID = -1002597094976             
-GROUP_INVITE_LINK = "https://t.me/+XWhmV6KdAOA3NGRi" 
 
 app = Client("video_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# دالة فحص القناة
+# دالة فحص القناة فقط
 async def check_channel_membership(client, user_id):
     try:
         member = await client.get_chat_member(CHANNEL_ID, user_id)
@@ -27,28 +25,14 @@ async def check_channel_membership(client, user_id):
         return False
     return False
 
-# دالة فحص المجموعة
-async def check_group_membership(client, user_id):
-    try:
-        member = await client.get_chat_member(GROUP_ID, user_id)
-        if member.status in ["creator", "administrator", "member"]:
-            return True
-    except UserNotParticipant:
-        return False
-    except Exception as e:
-        print(f"خطأ مجموعة: {e}")
-        return False
-    return False
-
 # أمر البدء /start
 @app.on_message(filters.command("start") & filters.private)
 async def start_command(client, message):
     user_id = message.from_user.id
     
     in_channel = await check_channel_membership(client, user_id)
-    in_group = await check_group_membership(client, user_id)
     
-    # 1. فحص القناة
+    # فحص القناة الإجباري
     if not in_channel:
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("اشترك في القناة 📢", url=f"https://t.me/{CHANNEL_USERNAME}")],
@@ -56,18 +40,6 @@ async def start_command(client, message):
         ])
         await message.reply(
             f"عذراً، يجب عليك الاشتراك في القناة (@{CHANNEL_USERNAME}) أولاً لتتمكن من استخدام البوت.\n\nبعد الاشتراك اضغط على زر التحقق أدناه 👇",
-            reply_markup=keyboard
-        )
-        return
-
-    # 2. فحص المجموعة
-    if not in_group:
-        keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("انضم للمجموعة 💬", url=GROUP_INVITE_LINK)],
-            [InlineKeyboardButton("تحقق من انضمام المجموعة ✅", callback_data="check_group")]
-        ])
-        await message.reply(
-            "عذراً، يجب عليك الانضمام إلى المجموعة أولاً لتتمكن من استخدام البوت.\n\nبعد الانضمام اضغط على زر التحقق أدناه 👇",
             reply_markup=keyboard
         )
         return
@@ -85,9 +57,9 @@ async def show_videos_menu(message):
     ])
     
     if hasattr(message, "reply_text"):
-        await message.reply_text("أهلاً بك! تم التحقق من اشتراكك وانضمامك بنجاح ✅.\nاختر المقطع الذي تريد مشاهدته:", reply_markup=keyboard)
+        await message.reply_text("أهلاً بك! تم التحقق من اشتراكك بنجاح ✅.\nاختر المقطع الذي تريد مشاهدته:", reply_markup=keyboard)
     else:
-        await message.edit_text("أهلاً بك! تم التحقق من اشتراكك وانضمامك بنجاح ✅.\nاختر المقطع الذي تريد مشاهدته:", reply_markup=keyboard)
+        await message.edit_text("أهلاً بك! تم التحقق من اشتراكك بنجاح ✅.\nاختر المقطع الذي تريد مشاهدته:", reply_markup=keyboard)
 
 # زر التحقق من القناة
 @app.on_callback_query(filters.regex("check_channel"))
@@ -97,44 +69,19 @@ async def verify_channel(client, callback_query):
     
     if in_channel:
         await callback_query.answer("تم التحقق من القناة بنجاح! 🎉", show_alert=False)
-        in_group = await check_group_membership(client, user_id)
-        if not in_group:
-            keyboard = InlineKeyboardMarkup([
-                [InlineKeyboardButton("انضم للمجموعة 💬", url=GROUP_INVITE_LINK)],
-                [InlineKeyboardButton("تحقق من انضمام المجموعة ✅", callback_data="check_group")]
-            ])
-            await callback_query.message.edit_text(
-                "رائع! تم التحقق من القناة ✅.\nالآن يجب عليك الانضمام إلى المجموعة لتتمكن من الاستمرار 👇",
-                reply_markup=keyboard
-            )
-        else:
-            await callback_query.message.delete()
-            await show_videos_menu(callback_query.message)
-    else:
-        await callback_query.answer("عذراً، لم يتم رصد اشتراكك بالقناة بعد!", show_alert=True)
-
-# زر التحقق من المجموعة
-@app.on_callback_query(filters.regex("check_group"))
-async def verify_group(client, callback_query):
-    user_id = callback_query.from_user.id
-    in_group = await check_group_membership(client, user_id)
-    
-    if in_group:
-        await callback_query.answer("تم التحقق من المجموعة بنجاح! 🎉", show_alert=False)
         await callback_query.message.delete()
         await show_videos_menu(callback_query.message)
     else:
-        await callback_query.answer("عذراً، لم يتم رصد انضمامك للمجموعة!", show_alert=True)
+        await callback_query.answer("عذراً، لم يتم رصد اشتراكك بالقناة بعد!", show_alert=True)
 
 # إرسال الفيديوهات
 @app.on_callback_query(filters.regex(r"^vid_\d$"))
 async def send_selected_video(client, callback_query):
     user_id = callback_query.from_user.id
     in_channel = await check_channel_membership(client, user_id)
-    in_group = await check_group_membership(client, user_id)
     
-    if not in_channel or not in_group:
-        await callback_query.answer("يجب عليك إكمال شروط الاشتراك والانضمام أولاً!", show_alert=True)
+    if not in_channel:
+        await callback_query.answer("يجب عليك الاشتراك في القناة أولاً!", show_alert=True)
         return
 
     video_num = callback_query.data.split("_")[1]
@@ -151,5 +98,6 @@ async def send_selected_video(client, callback_query):
     await callback_query.message.reply_video(video=file_id, caption=f"تفضل، هذا هو المقطع رقم {video_num} 🎬")
     await callback_query.answer()
 
-print("البوت يعمل الآن بصورة صحيحة ومع قناتك الخاصة...")
+print("البوت يعمل الآن على القناة فقط وبدون أخطاء...")
 app.run()
+    
