@@ -2,17 +2,17 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.errors import UserNotParticipant
 
-# بياناتك الأساسية
+# بياناتك الأساسية مع التوكن الجديد
 API_ID = 31050502              
 API_HASH = "30899f260555ef9e1ae8725cce3d540c"      
-BOT_TOKEN = "8627446273:AAGTP93hdDv4ZKeUG2V03JKOpjK0G1wIQgE"    
+BOT_TOKEN = "8627446273:AAH4hsKW2SMyBlxzPmSdQIrdJauP1tPoO7U"    
 
 CHANNEL_ID = -1001697421048           
 CHANNEL_USERNAME = "sbtbh"            
 
 app = Client("video_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# دالة فحص القناة فقط
+# دالة فحص القناة الإجباري
 async def check_channel_membership(client, user_id):
     try:
         member = await client.get_chat_member(CHANNEL_ID, user_id)
@@ -32,7 +32,6 @@ async def start_command(client, message):
     
     in_channel = await check_channel_membership(client, user_id)
     
-    # فحص القناة الإجباري
     if not in_channel:
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("اشترك في القناة 📢", url=f"https://t.me/{CHANNEL_USERNAME}")],
@@ -98,6 +97,6 @@ async def send_selected_video(client, callback_query):
     await callback_query.message.reply_video(video=file_id, caption=f"تفضل، هذا هو المقطع رقم {video_num} 🎬")
     await callback_query.answer()
 
-print("البوت يعمل الآن على القناة فقط وبدون أخطاء...")
+print("البوت يعمل بالتوكن الجديد وبشكل تامة...")
 app.run()
-      
+    
