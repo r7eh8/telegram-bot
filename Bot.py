@@ -7,7 +7,7 @@ API_HASH = "30899f260555ef9e1ae8725cce3d540c"
 BOT_TOKEN = "8627446273:AAH4hsKW2SMyBlxzPmSdQIrdJauP1tPoO7U"    
 
 CHANNEL_USERNAME = "sbtbh"         
-ARCHIVE_CHANNEL_ID = -1003818172414   
+ARCHIVE_CHANNEL = "p0023bh"   # يوزرنيم قناة الأرشيف
 
 app = Client("video_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
@@ -89,16 +89,16 @@ async def send_selected_video(client, message):
 
         msg_id = videos_messages[text]
         try:
-            # استخدام معرف الأرشيف المباشر بدون تكرار طلبات الجلب لتجنب الحظر
             await client.copy_message(
                 chat_id=message.chat.id,
-                from_chat_id=ARCHIVE_CHANNEL_ID,
+                from_chat_id=ARCHIVE_CHANNEL,
                 message_id=msg_id,
                 caption=f"تفضل، هذا هو {text} 🎬"
             )
         except Exception as e:
-            await message.reply(f"عذراً، حدث خطأ أثناء إرسال المقطع. تأكد أن البوت مشرف في قناة الأرشيف.")
+            await message.reply(f"عذراً، حدث خطأ أثناء إرسال المقطع.")
             print(f"خطأ نسخ الرسالة: {e}")
 
-print("البوت يعمل بكامل الكفاءة...")
+print("البوت يعمل بكامل الكفاءة وتم ربط الأرشيف بنجاح...")
 app.run()
+    
