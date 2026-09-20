@@ -5,27 +5,25 @@ API_ID = 31050502
 API_HASH = "30899f260555ef9e1ae8725cce3d540c"      
 BOT_TOKEN = "8627446273:AAH4hsKW2SMyBlxzPmSdQIrdJauP1tPoO7U"    
 
-# قناة التحقق من الاشتراك الإجباري العامة
-CHANNEL_ID = -1001697421048        
+# استخدام يوزرنيم القناة مباشرة لتجنب أخطاء الأيدي السالب
 CHANNEL_USERNAME = "sbtbh"         
 
-# أيدي قناة الأرشيف الخاصة
+# أيدي قناة الأرشيف الخاصة (هذه ضرورية ومضبوطة)
 ARCHIVE_CHANNEL_ID = -1003818172414   
 
 app = Client("video_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# دالة صارمة لفحص الاشتراك الإجباري
+# دالة صارمة لفحص الاشتراك باستخدام يوزرنيم القناة
 async def check_channel_membership(client, user_id):
     try:
-        member = await client.get_chat_member(CHANNEL_ID, user_id)
-        # التحقق من أن المستخدم فعلاً عضو أو مشرف أو منشيء بالقناة
+        member = await client.get_chat_member(CHANNEL_USERNAME, user_id)
         if member.status in ["creator", "administrator", "member"]:
             return True
         else:
             return False
     except Exception as e:
-        print(f"تنبيه فحص الاشتراك (غير مشترك أو خطأ): {e}")
-        return False  # إذا حدث خطأ (مثلاً العضو غير مشترك فعلياً)، نعتبره غير مشترك
+        print(f"تنبيه فحص الاشتراك: {e}")
+        return False  
 
 @app.on_message(filters.command("start") & filters.private)
 async def start_command(client, message):
@@ -60,7 +58,6 @@ async def verify_channel(client, callback_query):
     in_channel = await check_channel_membership(client, user_id)
     
     if not in_channel:
-        # تنبيه منبثق للمستخدم بأنه غير مشترك فعلياً
         await callback_query.answer("عذراً، أنت لست مشتركاً في القناة حتى الآن! يرجى الاشتراك أولاً ❌", show_alert=True)
         return
 
@@ -71,7 +68,7 @@ async def verify_channel(client, callback_query):
         pass
     await show_videos_menu(callback_query.message)
 
-# معالجة النصوص وإرسال الفيديو مرة واحدة فقط بدقة بدون أي تكرار
+# معالجة النصوص وإرسال الفيديو مرة واحدة فقط بدقة
 @app.on_message(filters.text & filters.private)
 async def send_selected_video(client, message):
     text = message.text
@@ -88,7 +85,6 @@ async def send_selected_video(client, message):
     }
     
     if text in videos_messages:
-        # فحص إضافي أمني للتأكد من اشتراكه قبل إرسال الفيديو مباشرة
         user_id = message.from_user.id
         in_channel = await check_channel_membership(client, user_id)
         if not in_channel:
@@ -97,7 +93,6 @@ async def send_selected_video(client, message):
 
         msg_id = videos_messages[text]
         try:
-            # استخدام group أو منع التكرار البرمجي
             await client.copy_message(
                 chat_id=message.chat.id,
                 from_chat_id=ARCHIVE_CHANNEL_ID,
@@ -108,6 +103,6 @@ async def send_selected_video(client, message):
             await message.reply(f"عذراً، حدث خطأ أثناء إرسال المقطع.")
             print(f"خطأ نسخ الرسالة: {e}")
 
-print("البوت يعمل بنجاح تام وتم تصحيح الاشتراك والتكرار...")
+print("البوت يعمل بكامل الكفاءة باستخدام يوزرنيم القناة...")
 app.run()
-        
+    
