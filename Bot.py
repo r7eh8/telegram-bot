@@ -89,9 +89,7 @@ async def send_selected_video(client, message):
 
         msg_id = videos_messages[text]
         try:
-            # إجبار البوت على جلب معلومات قناة الأرشيف وحفظها في الكاش لتجاوز مشكلة الـ Peer ID
-            await client.get_chat(ARCHIVE_CHANNEL_ID)
-            
+            # استخدام معرف الأرشيف المباشر بدون تكرار طلبات الجلب لتجنب الحظر
             await client.copy_message(
                 chat_id=message.chat.id,
                 from_chat_id=ARCHIVE_CHANNEL_ID,
@@ -100,8 +98,7 @@ async def send_selected_video(client, message):
             )
         except Exception as e:
             await message.reply(f"عذراً، حدث خطأ أثناء إرسال المقطع. تأكد أن البوت مشرف في قناة الأرشيف.")
-            print(f"خطأ نسخ الرسالة بالتفصيل: {e}")
+            print(f"خطأ نسخ الرسالة: {e}")
 
-print("البوت يعمل بكامل الكفاءة وتم ضبط الأرشيف...")
+print("البوت يعمل بكامل الكفاءة...")
 app.run()
-    
