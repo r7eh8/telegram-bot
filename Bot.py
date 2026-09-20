@@ -14,7 +14,6 @@ app = Client("video_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 async def check_channel_membership(client, user_id):
     try:
         member = await client.get_chat_member(CHANNEL_USERNAME, user_id)
-        # التحقق الصحيح المتوافق مع كائنات Pyrogram الحديثة
         status = member.status
         if status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER, "creator", "administrator", "member"]:
             return True
@@ -90,15 +89,19 @@ async def send_selected_video(client, message):
 
         msg_id = videos_messages[text]
         try:
+            # تحديث الكاش لقناة الأرشيف أولاً لتجنب مشكلة الـ Peer ID
+            chat_peer = await client.resolve_peer(ARCHIVE_CHANNEL_ID)
+            
             await client.copy_message(
                 chat_id=message.chat.id,
-                from_chat_id=ARCHIVE_CHANNEL_ID,
+                from_chat_id=chat_peer,
                 message_id=msg_id,
                 caption=f"تفضل، هذا هو {text} 🎬"
             )
         except Exception as e:
-            await message.reply(f"عذراً، حدث خطأ أثناء إرسال المقطع.")
-            print(f"خطأ نسخ الرسالة: {e}")
+            await message.reply(f"عذراً، حدث خطأ أثناء إرسال المقطع. تأكد أن البوت مشرف في قناة الأرشيف.")
+            print(f"خطأ نسخ الرسالة بالتفصيل: {e}")
 
-print("البوت يعمل بكامل الكفاءة وتم حل مشكلة مطابقة حالة الاشتراك...")
+print("البوت يعمل بكامل الكفاءة وتم حل مشكلة الأرشيف...")
 app.run()
+    
