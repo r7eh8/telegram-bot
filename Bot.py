@@ -1,11 +1,11 @@
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
+from pyrogram.enums import ChatMemberStatus
 
 API_ID = 31050502              
 API_HASH = "30899f260555ef9e1ae8725cce3d540c"      
 BOT_TOKEN = "8627446273:AAH4hsKW2SMyBlxzPmSdQIrdJauP1tPoO7U"    
 
-# يوزرنيم القناة العامة
 CHANNEL_USERNAME = "sbtbh"         
 ARCHIVE_CHANNEL_ID = -1003818172414   
 
@@ -13,16 +13,14 @@ app = Client("video_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 async def check_channel_membership(client, user_id):
     try:
-        # فحص حالة العضو في القناة
         member = await client.get_chat_member(CHANNEL_USERNAME, user_id)
-        print(f"حالة المستخدم {user_id} في القناة هي: {member.status}")
-        
-        if member.status in ["creator", "administrator", "member", "restricted"]:
+        # التحقق الصحيح المتوافق مع كائنات Pyrogram الحديثة
+        status = member.status
+        if status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER, "creator", "administrator", "member"]:
             return True
         return False
     except Exception as e:
-        # نطبع الخطأ بالكامل حتى نعرف هل هو بسبب صلاحيات البوت بالقناة أم شي ثاني
-        print(f"خطأ دقيق في فحص الاشتراك: {e}")
+        print(f"خطأ فحص الاشتراك: {e}")
         return False  
 
 @app.on_message(filters.command("start") & filters.private)
@@ -58,7 +56,7 @@ async def verify_channel(client, callback_query):
     in_channel = await check_channel_membership(client, user_id)
     
     if not in_channel:
-        await callback_query.answer("عذراً، لم تقم بالاشتراك في القناة أو لم يتم رصد اشتراكك بعد! ❌", show_alert=True)
+        await callback_query.answer("عذراً، أنت لست مشتركاً في القناة أو لم يتم رصد اشتراكك بعد! ❌", show_alert=True)
         return
 
     await callback_query.answer("تم التحقق بنجاح! 🎉", show_alert=False)
@@ -102,5 +100,5 @@ async def send_selected_video(client, message):
             await message.reply(f"عذراً، حدث خطأ أثناء إرسال المقطع.")
             print(f"خطأ نسخ الرسالة: {e}")
 
-print("البوت جاهز مع نظام الفحص المطور...")
+print("البوت يعمل بكامل الكفاءة وتم حل مشكلة مطابقة حالة الاشتراك...")
 app.run()
