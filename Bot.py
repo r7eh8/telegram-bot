@@ -5,24 +5,24 @@ API_ID = 31050502
 API_HASH = "30899f260555ef9e1ae8725cce3d540c"      
 BOT_TOKEN = "8627446273:AAH4hsKW2SMyBlxzPmSdQIrdJauP1tPoO7U"    
 
-# استخدام يوزرنيم القناة مباشرة لتجنب أخطاء الأيدي السالب
+# يوزرنيم القناة العامة
 CHANNEL_USERNAME = "sbtbh"         
-
-# أيدي قناة الأرشيف الخاصة (هذه ضرورية ومضبوطة)
 ARCHIVE_CHANNEL_ID = -1003818172414   
 
 app = Client("video_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# دالة صارمة لفحص الاشتراك باستخدام يوزرنيم القناة
 async def check_channel_membership(client, user_id):
     try:
+        # فحص حالة العضو في القناة
         member = await client.get_chat_member(CHANNEL_USERNAME, user_id)
-        if member.status in ["creator", "administrator", "member"]:
+        print(f"حالة المستخدم {user_id} في القناة هي: {member.status}")
+        
+        if member.status in ["creator", "administrator", "member", "restricted"]:
             return True
-        else:
-            return False
+        return False
     except Exception as e:
-        print(f"تنبيه فحص الاشتراك: {e}")
+        # نطبع الخطأ بالكامل حتى نعرف هل هو بسبب صلاحيات البوت بالقناة أم شي ثاني
+        print(f"خطأ دقيق في فحص الاشتراك: {e}")
         return False  
 
 @app.on_message(filters.command("start") & filters.private)
@@ -58,7 +58,7 @@ async def verify_channel(client, callback_query):
     in_channel = await check_channel_membership(client, user_id)
     
     if not in_channel:
-        await callback_query.answer("عذراً، أنت لست مشتركاً في القناة حتى الآن! يرجى الاشتراك أولاً ❌", show_alert=True)
+        await callback_query.answer("عذراً، لم تقم بالاشتراك في القناة أو لم يتم رصد اشتراكك بعد! ❌", show_alert=True)
         return
 
     await callback_query.answer("تم التحقق بنجاح! 🎉", show_alert=False)
@@ -68,7 +68,6 @@ async def verify_channel(client, callback_query):
         pass
     await show_videos_menu(callback_query.message)
 
-# معالجة النصوص وإرسال الفيديو مرة واحدة فقط بدقة
 @app.on_message(filters.text & filters.private)
 async def send_selected_video(client, message):
     text = message.text
@@ -103,6 +102,5 @@ async def send_selected_video(client, message):
             await message.reply(f"عذراً، حدث خطأ أثناء إرسال المقطع.")
             print(f"خطأ نسخ الرسالة: {e}")
 
-print("البوت يعمل بكامل الكفاءة باستخدام يوزرنيم القناة...")
+print("البوت جاهز مع نظام الفحص المطور...")
 app.run()
-    
