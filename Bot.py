@@ -89,12 +89,12 @@ async def send_selected_video(client, message):
 
         msg_id = videos_messages[text]
         try:
-            # تحديث الكاش لقناة الأرشيف أولاً لتجنب مشكلة الـ Peer ID
-            chat_peer = await client.resolve_peer(ARCHIVE_CHANNEL_ID)
+            # إجبار البوت على جلب معلومات قناة الأرشيف وحفظها في الكاش لتجاوز مشكلة الـ Peer ID
+            await client.get_chat(ARCHIVE_CHANNEL_ID)
             
             await client.copy_message(
                 chat_id=message.chat.id,
-                from_chat_id=chat_peer,
+                from_chat_id=ARCHIVE_CHANNEL_ID,
                 message_id=msg_id,
                 caption=f"تفضل، هذا هو {text} 🎬"
             )
@@ -102,6 +102,6 @@ async def send_selected_video(client, message):
             await message.reply(f"عذراً، حدث خطأ أثناء إرسال المقطع. تأكد أن البوت مشرف في قناة الأرشيف.")
             print(f"خطأ نسخ الرسالة بالتفصيل: {e}")
 
-print("البوت يعمل بكامل الكفاءة وتم حل مشكلة الأرشيف...")
+print("البوت يعمل بكامل الكفاءة وتم ضبط الأرشيف...")
 app.run()
     
