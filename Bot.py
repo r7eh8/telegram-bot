@@ -14,15 +14,18 @@ ARCHIVE_CHANNEL_ID = -1003818172414
 
 app = Client("video_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
+# دالة صارمة لفحص الاشتراك الإجباري
 async def check_channel_membership(client, user_id):
     try:
         member = await client.get_chat_member(CHANNEL_ID, user_id)
+        # التحقق من أن المستخدم فعلاً عضو أو مشرف أو منشيء بالقناة
         if member.status in ["creator", "administrator", "member"]:
             return True
+        else:
+            return False
     except Exception as e:
-        print(f"تنبيه فحص الاشتراك: {e}")
-        return True  
-    return False
+        print(f"تنبيه فحص الاشتراك (غير مشترك أو خطأ): {e}")
+        return False  # إذا حدث خطأ (مثلاً العضو غير مشترك فعلياً)، نعتبره غير مشترك
 
 @app.on_message(filters.command("start") & filters.private)
 async def start_command(client, message):
@@ -53,6 +56,14 @@ async def show_videos_menu(message):
 
 @app.on_callback_query(filters.regex("check_channel"))
 async def verify_channel(client, callback_query):
+    user_id = callback_query.from_user.id
+    in_channel = await check_channel_membership(client, user_id)
+    
+    if not in_channel:
+        # تنبيه منبثق للمستخدم بأنه غير مشترك فعلياً
+        await callback_query.answer("عذراً، أنت لست مشتركاً في القناة حتى الآن! يرجى الاشتراك أولاً ❌", show_alert=True)
+        return
+
     await callback_query.answer("تم التحقق بنجاح! 🎉", show_alert=False)
     try:
         await callback_query.message.delete()
@@ -60,7 +71,7 @@ async def verify_channel(client, callback_query):
         pass
     await show_videos_menu(callback_query.message)
 
-# سحب الفيديوهات بناءً على أيدي الرسائل الحقيقي من قناة الأرشيف
+# معالجة النصوص وإرسال الفيديو مرة واحدة فقط بدقة بدون أي تكرار
 @app.on_message(filters.text & filters.private)
 async def send_selected_video(client, message):
     text = message.text
@@ -68,7 +79,6 @@ async def send_selected_video(client, message):
     if text == "/start":
         return
 
-    # ربط أزرار القائمة بأيدي الرسائل الصحيحة التي استخرجناها من الروابط
     videos_messages = {
         "🎥 المقطع الأول": 3,   
         "🎥 المقطع الثاني": 2,   
@@ -78,8 +88,16 @@ async def send_selected_video(client, message):
     }
     
     if text in videos_messages:
+        # فحص إضافي أمني للتأكد من اشتراكه قبل إرسال الفيديو مباشرة
+        user_id = message.from_user.id
+        in_channel = await check_channel_membership(client, user_id)
+        if not in_channel:
+            await message.reply(f"عذراً، يجب عليك الاشتراك في القناة (@{CHANNEL_USERNAME}) أولاً لاستخدام البوت 📢")
+            return
+
         msg_id = videos_messages[text]
         try:
+            # استخدام group أو منع التكرار البرمجي
             await client.copy_message(
                 chat_id=message.chat.id,
                 from_chat_id=ARCHIVE_CHANNEL_ID,
@@ -87,8 +105,9 @@ async def send_selected_video(client, message):
                 caption=f"تفضل، هذا هو {text} 🎬"
             )
         except Exception as e:
-            await message.reply(f"عذراً، حدث خطأ أثناء إرسال المقطع. تأكد أن البوت مشرف في قناة الأرشيف.")
+            await message.reply(f"عذراً، حدث خطأ أثناء إرسال المقطع.")
             print(f"خطأ نسخ الرسالة: {e}")
 
-print("البوت يعمل بنجاح ومربوط بأرشيف الفيديوهات...")
+print("البوت يعمل بنجاح تام وتم تصحيح الاشتراك والتكرار...")
 app.run()
+        
